@@ -16,7 +16,7 @@ from zoonotic_validator.pipeline import run_validation_pipeline
 # ============================================================
 
 script_dir = os.path.dirname(__file__)
-input_file = os.path.join(script_dir, "mi_excel_zoonoticos.xlsx")  # Reemplace con el nombre de su archivo de Excel a validar
+input_file = os.path.join(script_dir, "mi_excel_zoonoticos5.xlsx")  # Reemplace con el nombre de su archivo de Excel a validar
 sheet_to_validate = 0  # Puede ser el nombre de la hoja o su índice (0 para la primera hoja)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

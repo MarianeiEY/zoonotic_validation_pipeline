@@ -14,7 +14,7 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
 
-ERROR_FILL = PatternFill(fill_type="solid", fgColor="FFF2CC") # Un color de relleno amarillo claro para resaltar las celdas con errores en el Excel marcado. Se puede personalizar según las preferencias de visualización.
+ERROR_FILL = PatternFill(fill_type="solid", fgColor="FF6B6B") # Un color de relleno rojo claro para resaltar las celdas con errores en el Excel marcado. Se puede personalizar según las preferencias de visualización.
 
 # Esta función toma un DataFrame con los errores detectados y lo guarda en un archivo Excel. El parámetro index=False se utiliza para evitar que se guarde una columna adicional con los índices del DataFrame, lo que hace que el archivo de salida sea más limpio y fácil de leer. El nombre del archivo de salida se especifica a través del parámetro output_file.
 def save_errors_to_excel(errors_df: pd.DataFrame, output_file: str) -> None:
@@ -55,6 +55,18 @@ def create_marked_excel(
 # Este informe es útil para que los usuarios puedan revisar fácilmente los errores encontrados y entender qué aspectos necesitan ser corregidos en el Excel original.
 def create_word_report(errors_df: pd.DataFrame, output_file: str) -> None:
     """Generate a clear Word report with summary and detailed tables."""
+    # Diccionario con descripciones de códigos de error
+    error_descriptions = {
+        "E001": "Columna obligatoria faltante",
+        "E002": "Campo obligatorio vacío",
+        "E003": "Valor debe ser exactamente el especificado",
+        "E004": "Año incorrecto en repYear",
+        "E005": "Valor prohibido detectado",
+        "E006": "Formato numérico inválido",
+        "E007": "Formato recId inválido (CCAA_AGENTE_###)",
+        "E008": "Fila completa duplicada",
+    }
+    
     document = Document()
     document.add_heading("Informe de validación del Excel", level=1)
 
@@ -92,16 +104,18 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str) -> None:
 
     document.add_heading("Resumen por tipo de error", level=2)
     grouped = Counter(errors_df["error_code"])
-    grouped_table = document.add_table(rows=1, cols=2)
+    grouped_table = document.add_table(rows=1, cols=3)
     grouped_table.style = "Table Grid"
     grouped_header = grouped_table.rows[0].cells
     grouped_header[0].text = "Código"
-    grouped_header[1].text = "Número de casos"
+    grouped_header[1].text = "Descripción"
+    grouped_header[2].text = "Número de casos"
 
     for code, count in sorted(grouped.items()):
         row = grouped_table.add_row().cells
         row[0].text = str(code)
-        row[1].text = str(count)
+        row[1].text = error_descriptions.get(str(code), "Error desconocido")
+        row[2].text = str(count)
 
     document.add_heading("Detalle de incidencias", level=2)
     detail_table = document.add_table(rows=1, cols=6)
@@ -118,7 +132,7 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str) -> None:
         row = detail_table.add_row().cells
         row[0].text = str(error["excel_row"])
         row[1].text = str(error["field"])
-        row[2].text = "" if pd.isna(error["value"]) else str(error["value"])
+        row[2].text = "null" if pd.isna(error["value"]) else str(error["value"])
         row[3].text = str(error["error_code"])
         row[4].text = str(error["message"])
         row[5].text = (

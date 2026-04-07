@@ -195,7 +195,7 @@ def validate_prohibited_text_values(
     sheet_name: str,
 ) -> None:
     """Validate generic text values that are forbidden across the workbook."""
-    prohibited_values = {value.lower() for value in config.prohibited_text_values}
+    prohibited_values = {value.lower() for value in config.prohibited_text_values} #no puede ser "unspecified" ni "desconocido" ni "unknown"
 
     for column in df.columns:
         for row_index, row in df.iterrows():
@@ -244,7 +244,7 @@ def validate_numeric_columns(
             if is_empty(value):
                 continue
 
-            if not is_valid_numeric_text(value, allow_decimal):
+            if not is_valid_numeric_text(value, allow_decimal): #que no tenga unidades y que el formato sea correcto (si se permiten decimales, que tenga un punto decimal, pero no una coma, etc.)
                 _append_error(
                     errors,
                     excel_row=excel_row,
@@ -256,6 +256,153 @@ def validate_numeric_columns(
                     is_cell_level=True,
                     excel_column=header_map.get(column),
                 )
+
+
+def validate_recid_format(
+    df: pd.DataFrame,
+    errors: List[ValidationError],
+    header_map: Dict[str, int],
+    sheet_name: str,
+) -> None:
+    """Validate that recId follows the format: CCAA+AGENTE+###.
+    
+    The format should be:
+    - Part 1 (CCAA): Community identifier in UPPERCASE (2-4 chars)
+    - Part 2 (AGENTE): Valid zoonotic agent code from the approved list
+    - Part 3 (###): Sequential numeric identifier (e.g., 01, 02, etc.)
+    No separators (_) are used. Example: MUREch01
+    """
+    # Códigos válidos de agentes zoonóticos
+    valid_agent_codes = {
+        "Camp",    # Campylobacter
+        "Cys",     # Cysticercys
+        "Cro",     # Cronobacter
+        "Ech",     # Echinococcus
+        "ToxSa",   # Enterotoxinas Estafilococcias
+        "His",     # Histamina
+        "Lis",     # Listeria
+        "Myc",     # Tuberculosis/Mycobacterium
+        "Sal",     # Salmonella
+        "Ecoli",   # Stec
+        "Tri",     # Trichinella
+        "Yer",     # Yersinia
+    }
+    
+    if "recId" not in df.columns:
+        return
+
+    for row_index, row in df.iterrows():
+        excel_row = row_index + 2
+        value = row["recId"]
+
+        if is_empty(value):
+            continue
+
+        value_str = str(value).strip()
+
+        # Extraer números del final
+        numero = ""
+        ccaa_agente = value_str
+        
+        while ccaa_agente and ccaa_agente[-1].isdigit():
+            numero = ccaa_agente[-1] + numero
+            ccaa_agente = ccaa_agente[:-1]
+
+        # Validar que hay números
+        if not numero:
+            _append_error(
+                errors,
+                excel_row=excel_row,
+                field="recId",
+                value=value,
+                error_code="E007",
+                message=f"El recId '{value}' debe terminar en un número secuencial.",
+                sheet_name=sheet_name,
+                is_cell_level=True,
+                excel_column=header_map.get("recId"),
+            )
+            continue
+
+        # Buscar el código de agente válido en la parte restante
+        agente = None
+        ccaa = None
+
+        for valid_code in sorted(valid_agent_codes, key=len, reverse=True):
+            if ccaa_agente.endswith(valid_code):
+                agente = valid_code
+                ccaa = ccaa_agente[:-len(valid_code)]
+                break
+
+        # Si no encontró agente válido
+        if agente is None:
+            valid_codes = ", ".join(sorted(valid_agent_codes))
+            _append_error(
+                errors,
+                excel_row=excel_row,
+                field="recId",
+                value=value,
+                error_code="E007",
+                message=f"El recId '{value}' no contiene un código de agente válido. Códigos válidos: {valid_codes}",
+                sheet_name=sheet_name,
+                is_cell_level=True,
+                excel_column=header_map.get("recId"),
+            )
+            continue
+
+        # Validar que CCAA no está vacío
+        if not ccaa or not ccaa.strip():
+            _append_error(
+                errors,
+                excel_row=excel_row,
+                field="recId",
+                value=value,
+                error_code="E007",
+                message=f"El recId '{value}' debe especificar la CCAA.",
+                sheet_name=sheet_name,
+                is_cell_level=True,
+                excel_column=header_map.get("recId"),
+            )
+            continue
+
+        # Validar que CCAA está en mayúsculas
+        if ccaa != ccaa.upper():
+            _append_error(
+                errors,
+                excel_row=excel_row,
+                field="recId",
+                value=value,
+                error_code="E007",
+                message=f"El recId '{value}' debe tener la CCAA en mayúsculas.",
+                sheet_name=sheet_name,
+                is_cell_level=True,
+                excel_column=header_map.get("recId"),
+            )
+
+
+def validate_duplicate_rows(
+    df: pd.DataFrame,
+    errors: List[ValidationError],
+    sheet_name: str,
+) -> None:
+    """Validate that complete rows are not duplicated."""
+    duplicate_rows = df.duplicated(keep=False)
+
+    if duplicate_rows.any():
+        for row_index in df.index[duplicate_rows]:
+            excel_row = row_index + 2
+            _append_error(
+                errors,
+                excel_row=excel_row,
+                field="(Fila completa)",
+                value="",
+                error_code="E008",
+                message=f"La fila completa está duplicada en el Excel.",
+                sheet_name=sheet_name,
+                is_cell_level=False,
+                excel_column=None,
+            )
+
+
 
 
 def run_general_validations(
@@ -280,5 +427,7 @@ def run_general_validations(
     validate_expected_year(working_df, errors, header_map, config, sheet_name)
     validate_prohibited_text_values(working_df, errors, header_map, config, sheet_name)
     validate_numeric_columns(working_df, errors, header_map, config, sheet_name)
+    validate_recid_format(working_df, errors, header_map, sheet_name)
+    validate_duplicate_rows(working_df, errors, sheet_name)
 
     return pd.DataFrame([error.to_dict() for error in errors])

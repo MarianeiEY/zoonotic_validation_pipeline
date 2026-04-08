@@ -15,9 +15,9 @@ from zoonotic_validator.pipeline import run_validation_pipeline
 # pip install pandas openpyxl python-docx notebook ipykernel
 # ============================================================
 
-script_dir = os.path.dirname(__file__)
-input_file = os.path.join(script_dir, "mi_excel_zoonoticos5.xlsx")  # Reemplace con el nombre de su archivo de Excel a validar
-sheet_to_validate = 0  # Puede ser el nombre de la hoja o su índice (0 para la primera hoja)
+script_dir = os.path.dirname(__file__) 
+input_file = os.path.join(script_dir, "2024_ICAN_ENTEROTOXINAprueba.xls")  # Reemplace con el nombre de su archivo de Excel a validar
+sheet_to_validate = 1  # Puede ser el nombre de la hoja o su índice (0 para la primera hoja)
 
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 output_folder = os.path.join(script_dir, f"resultados_{timestamp}")

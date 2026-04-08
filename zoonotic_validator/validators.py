@@ -271,6 +271,8 @@ def validate_recid_format(
     - Part 2 (AGENTE): Valid zoonotic agent code from the approved list
     - Part 3 (###): Sequential numeric identifier (e.g., 01, 02, etc.)
     No separators (_) are used. Example: MUREch01
+    
+    Additionally, validates that numbers are consecutive within each CCAA_AGENTE group.
     """
     # Códigos válidos de agentes zoonóticos
     valid_agent_codes = {
@@ -341,7 +343,7 @@ def validate_recid_format(
                 field="recId",
                 value=value,
                 error_code="E007",
-                message=f"El recId '{value}' contiene un código de agente zoonótico NO válido. Formato esperado: CCAAAgente### (ej: MURCamp01).",
+                message=f"El recId '{value}' contiene un código de agente zoonótico NO válido. Formato esperado: CCAA_AGENTE_### (ej: MU_Camp_01).",
                 sheet_name=sheet_name,
                 is_cell_level=True,
                 excel_column=header_map.get("recId"),
@@ -376,6 +378,29 @@ def validate_recid_format(
                 is_cell_level=True,
                 excel_column=header_map.get("recId"),
             )
+            continue
+
+        # Validar que el número coincida con la fila del Excel
+        # Fila 2 (row_index=0) debe tener número 01, fila 3 (row_index=1) debe tener 02, etc.
+        expected_num = row_index + 1
+        expected_num_str = str(expected_num).zfill(2)  # Formato con 2 dígitos: 01, 02, etc.
+        
+        try:
+            num_value = int(numero)
+            if num_value != expected_num:
+                _append_error(
+                    errors,
+                    excel_row=excel_row,
+                    field="recId",
+                    value=value,
+                    error_code="E007",
+                    message=f"El recId '{value}' tiene número {numero}, pero en la fila {excel_row} debe ser {expected_num_str}.",
+                    sheet_name=sheet_name,
+                    is_cell_level=True,
+                    excel_column=header_map.get("recId"),
+                )
+        except ValueError:
+            pass  # Ya fue validado antes
 
 
 def validate_duplicate_rows(

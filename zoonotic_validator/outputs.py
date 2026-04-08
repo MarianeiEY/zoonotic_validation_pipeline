@@ -10,7 +10,7 @@ from pathlib import Path # Importamos Path para manejar las rutas de los archivo
 import pandas as pd
 from docx import Document
 from docx.shared import Inches
-from openpyxl import load_workbook
+from openpyxl import load_workbook, Workbook
 from openpyxl.styles import PatternFill
 
 
@@ -31,12 +31,36 @@ def create_marked_excel(
 ) -> None:
     """Create a copy of the original workbook and highlight invalid cells.
 
+    Supports both .xls and .xlsx file formats.
     Only cell-level errors can be highlighted because structural errors
     such as missing columns do not point to a specific existing cell.
     """
-    workbook = load_workbook(input_file)
-    worksheet = workbook[workbook.sheetnames[sheet_name] if isinstance(sheet_name, int) else sheet_name]
+    # Detectar si es archivo .xls o .xlsx
+    is_xls = input_file.lower().endswith('.xls')
+    
+    if is_xls:
+        # Para archivos .xls: leer con pandas (usa xlrd automáticamente) y recrear con openpyxl
+        df_data = pd.read_excel(input_file, sheet_name=sheet_name)
+        
+        # Crear nuevo workbook
+        workbook = Workbook()
+        worksheet = workbook.active
+        worksheet.title = df_data.index.name or "Sheet1"
+        
+        # Escribir encabezados
+        for col_idx, col_name in enumerate(df_data.columns, start=1):
+            worksheet.cell(row=1, column=col_idx, value=col_name)
+        
+        # Escribir datos
+        for row_idx, row in enumerate(df_data.itertuples(index=False), start=2):
+            for col_idx, value in enumerate(row, start=1):
+                worksheet.cell(row=row_idx, column=col_idx, value=value)
+    else:
+        # Para archivos .xlsx: usar openpyxl directamente
+        workbook = load_workbook(input_file)
+        worksheet = workbook[workbook.sheetnames[sheet_name] if isinstance(sheet_name, int) else sheet_name]
 
+    # Aplicar resaltado a los errores a nivel de celda
     if not errors_df.empty:
         cell_level_errors = errors_df[errors_df["is_cell_level"] == True]
         for _, error in cell_level_errors.iterrows():

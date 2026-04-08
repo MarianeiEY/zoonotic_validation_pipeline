@@ -45,11 +45,13 @@ def is_valid_numeric_text(value: Any, allow_decimal: bool = True) -> bool: # Est
     - thousand separators are not allowed
     - decimals are only allowed with a single dot when allow_decimal=True
     - integer-only fields must contain digits only
+    - whole numbers (52763.0) are valid for integer-only fields
 
     Examples considered valid:
     - 1000
     - 12.5
     - 0.75
+    - 52763.0 (for integer-only fields)
 
     Examples considered invalid:
     - 1,000
@@ -57,6 +59,7 @@ def is_valid_numeric_text(value: Any, allow_decimal: bool = True) -> bool: # Est
     - 128,825
     - 1,000.50
     - 1.000,50
+    - 12.5 (for integer-only fields)
     """
     if pd.isna(value):
         return True
@@ -69,7 +72,15 @@ def is_valid_numeric_text(value: Any, allow_decimal: bool = True) -> bool: # Est
         return False
 
     if not allow_decimal:
-        return bool(re.fullmatch(r"\d+", text))
+        # Para campos de enteros, aceptar:
+        # 1. Números puros sin decimales: 1000
+        # 2. Números con .0 (floats que son números enteros): 1000.0
+        if re.fullmatch(r"\d+", text):
+            return True
+        # Verificar si es un número con .0 (número entero pero representado como float)
+        if re.fullmatch(r"\d+\.0+", text):
+            return True
+        return False
 
     if not re.fullmatch(r"\d+(\.\d+)?", text):
         return False

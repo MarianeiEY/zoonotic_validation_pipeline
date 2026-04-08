@@ -51,12 +51,15 @@ print(f"✓ Archivo seleccionado: {excel_files[selected_idx]}\n")
 
 sheet_to_validate = 1  # Puede ser el nombre de la hoja o su índice (0 para la primera hoja)
 
+# Extraer nombre del archivo sin extensión para incluirlo en los outputs
+file_name_without_ext = Path(excel_files[selected_idx]).stem
+
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 output_folder = os.path.join(script_dir, f"resultados_{timestamp}")
 
-errors_output_file = os.path.join(output_folder, "errores_validaciones_generales.xlsx")
-marked_excel_output_file = os.path.join(output_folder, "mi_excel_zoonoticos_marcado.xlsx")
-word_output_file = os.path.join(output_folder, "informe_errores_validacion.docx")
+errors_output_file = os.path.join(output_folder, f"errores_validaciones_generales_{file_name_without_ext}.xlsx")
+marked_excel_output_file = os.path.join(output_folder, f"mi_excel_zoonoticos_marcado_{file_name_without_ext}.xlsx")
+word_output_file = os.path.join(output_folder, f"informe_errores_validacion_{file_name_without_ext}.docx")
 
 # Crear la carpeta antes del pipeline (las funciones de salida la necesitan)
 # Si hay error, se borrará automáticamente

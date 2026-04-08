@@ -84,10 +84,10 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str) -> None:
         "E001": "Columna obligatoria faltante",
         "E002": "Campo obligatorio vacío",
         "E003": "Valor debe ser exactamente el especificado",
-        "E004": "Año incorrecto en repYear",
+        "E004": "Año en repYear no coincide con el año de Mapping_Options",
         "E005": "Valor prohibido detectado",
         "E006": "Formato numérico inválido",
-        "E007": "Formato recId inválido: CCAA debe estar en MAYÚSCULAS, agente debe ser válido (Camp/Cys/Cro/Ech/ToxSa/His/Lis/Myc/Sal/Ecoli/Tri/Yer) y números deben ser secuenciales",
+        "E007": "Formato recId inválido: CCAA en MAYÚSCULAS, agente válido, números según fila",
         "E008": "Fila completa duplicada",
     }
     
@@ -96,10 +96,10 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str) -> None:
         "E001": "Agregue la columna faltante al fichero Excel.",
         "E002": "Rellene el campo obligatorio que está vacío.",
         "E003": "Corrija el valor para que coincida exactamente con el especificado.",
-        "E004": "Verifique y corrija el año en la columna repYear.",
+        "E004": "Corrija el año en repYear para que coincida con el año de la hoja Mapping_Options (celda A1).",
         "E005": "No puede ser \"unspecified\", \"desconocido\" ni \"unknown\".",
         "E006": "Corrija el formato del número (verifique decimales, separadores y tipo de dato).",
-        "E007": "Corrija el recId siguiendo el patrón CCAA_AGENTE_###. Verifique: (1) CCAA en MAYÚSCULAS, (2) Agente zoon. válido, (3) Números secuenciales.",
+        "E007": "Corrija el recId siguiendo el patrón CCAA_AGENTE_###. Verifique: (1) CCAA en MAYÚSCULAS, (2) Agente zoon. válido, (3) Números según fila del Excel.",
         "E008": "Elimine la fila duplicada o verifique que los datos sean correctamente únicos.",
     }
     

@@ -3,6 +3,8 @@
 # Incluye la función run_validation_pipeline, que es el punto de entrada para ejecutar todo: el proceso de validación, desde la carga del Excel, pasando por la ejecución de las validaciones, hasta la generación de los archivos de salida con los resultados.
 
 import pandas as pd
+import re
+from openpyxl import load_workbook
 
 from .config import ValidationConfig # Importamos la clase ValidationConfig para acceder a la configuración centralizada de las validaciones, lo que permite que el pipeline se ejecute de manera consistente y flexible según las reglas definidas en la configuración.
 from .models import ValidationError # Importamos la clase ValidationError para estandarizar la forma en que se registran los errores detectados durante las validaciones, lo que facilita su manejo y exportación a los archivos de salida.
@@ -19,6 +21,60 @@ def load_excel(input_file: str, sheet_name=0):
     else:
         actual_sheet_name = sheet_name
     return dataframe, actual_sheet_name
+
+
+def extract_year_from_mapping_options(input_file: str) -> int:
+    """Extract the year from cell A1 (possibly merged) of the 'Mapping_Options' sheet (first sheet).
+    
+    The cell contains text like: "EFSA's Manual Mapping Tool (version 4.0 2025 data submission)"
+    Handles merged cells by reading with openpyxl.
+    
+    Returns the year as an integer, or None if not found or invalid.
+    """
+    try:
+        # Si es archivo .xlsx, usar openpyxl para manejar celdas fusionadas
+        if input_file.lower().endswith('.xlsx'):
+            try:
+                workbook = load_workbook(input_file)
+                first_sheet = workbook.active
+                cell_value = first_sheet['A1'].value
+            except Exception:
+                cell_value = None
+        else:
+            cell_value = None
+        
+        # Si no se leyó con openpyxl, intentar con pandas (lee toda la primera fila)
+        if cell_value is None:
+            mapping_sheet = pd.read_excel(input_file, sheet_name=0, header=None, nrows=1)
+            
+            # Buscamos el texto del año en cualquier celda de la primera fila
+            for cell in mapping_sheet.values[0]:
+                if pd.notna(cell):
+                    cell_value = str(cell)
+                    if 'data' in cell_value.lower() or 'submission' in cell_value.lower():
+                        break
+        
+        if cell_value is not None:
+            cell_text = str(cell_value)
+            
+            # Reemplazar saltos de línea y espacios múltiples
+            cell_text_clean = " ".join(cell_text.split())
+            
+            # Buscar un patrón como "4.0 XXXX data" donde XXXX es el año (4 dígitos)
+            match = re.search(r'4\.0\s+(\d{4})\s+data', cell_text_clean, re.IGNORECASE)
+            if match:
+                year = int(match.group(1))
+                return year
+            
+            # Si no encuentra el patrón exacto, intenta buscar cualquier año entre 1900 y 2100
+            year_match = re.search(r'\b(19\d{2}|20\d{2})\b', cell_text_clean)
+            if year_match:
+                year = int(year_match.group(1))
+                return year
+    except (IndexError, ValueError, TypeError):
+        pass
+    
+    return None
 # ============================================================
 # Esta función es el punto de entrada para ejecutar todo el pipeline de validación de datos zoonóticos. Coordina la carga del Excel, la ejecución de las validaciones generales, y la generación de los archivos de salida con los resultados. El resultado de esta función es un DataFrame con los errores detectados en las validaciones generales, que se puede utilizar para revisar los resultados o para otros fines posteriores.
 def run_validation_pipeline( 
@@ -33,14 +89,34 @@ def run_validation_pipeline(
 
     This is the single function that coordinates:
     1. Excel loading
-    2. Validation execution
-    3. Output generation
+    2. Year extraction from Mapping_Options sheet
+    3. Validation execution
+    4. Output generation
     """
+    # Extraer el año de la primera hoja (Mapping_Options)
+    extracted_year = extract_year_from_mapping_options(input_file)
+    
+    # Crear una nueva instancia de config con el año extraído
+    if extracted_year is not None:
+        # Crear un nuevo config con el año extraído
+        config_with_year = ValidationConfig(
+            required_columns=config.required_columns,
+            exact_rep_country=config.exact_rep_country,
+            exact_lang=config.exact_lang,
+            expected_year=extracted_year,  # Usar el año extraído
+            prohibited_text_values=config.prohibited_text_values,
+            numeric_columns_allow_decimals=config.numeric_columns_allow_decimals,
+            numeric_columns_integers_only=config.numeric_columns_integers_only,
+            recid_pattern_hint=config.recid_pattern_hint,
+        )
+    else:
+        config_with_year = config
+    
     dataframe, actual_sheet_name = load_excel(input_file, sheet_name=sheet_name)
     errors_df = run_general_validations(
         dataframe,
         sheet_name=actual_sheet_name,
-        config=config,
+        config=config_with_year,
     )
 # Después de ejecutar las validaciones generales, se generan los archivos de salida correspondientes: un Excel con los errores detectados, una copia del Excel original con las celdas que contienen errores resaltadas, y un informe en Word que resume los errores encontrados. El resultado de esta función es un DataFrame con los errores detectados en las validaciones generales, que se puede utilizar para revisar los resultados o para otros fines posteriores.
     save_errors_to_excel(errors_df, errors_output_file)

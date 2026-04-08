@@ -180,7 +180,7 @@ def validate_expected_year(
                 field="repYear",
                 value=value,
                 error_code="E004",
-                message=f"El campo 'repYear' debe ser {config.expected_year}.",
+                message=f"El campo 'repYear' debe ser {config.expected_year} (año de la hoja Mapping_Options).",
                 sheet_name=sheet_name,
                 is_cell_level=True,
                 excel_column=header_map.get("repYear"),

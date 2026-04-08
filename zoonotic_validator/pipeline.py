@@ -107,7 +107,7 @@ def run_validation_pipeline(
             prohibited_text_values=config.prohibited_text_values,
             numeric_columns_allow_decimals=config.numeric_columns_allow_decimals,
             numeric_columns_integers_only=config.numeric_columns_integers_only,
-            recid_pattern_hint=config.recid_pattern_hint,
+            recid_pattern_hint=config.recid_pattern_hint
         )
     else:
         config_with_year = config

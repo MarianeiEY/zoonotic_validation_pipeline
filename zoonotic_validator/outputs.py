@@ -63,8 +63,20 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str) -> None:
         "E004": "Año incorrecto en repYear",
         "E005": "Valor prohibido detectado",
         "E006": "Formato numérico inválido",
-        "E007": "Formato recId inválido (CCAA_AGENTE_###)",
+        "E007": "Formato recId inválido: CCAA debe estar en MAYÚSCULAS, agente debe ser válido (Camp/Cys/Cro/Ech/ToxSa/His/Lis/Myc/Sal/Ecoli/Tri/Yer) y números deben ser secuenciales",
         "E008": "Fila completa duplicada",
+    }
+    
+    # Diccionario con mensajes específicos de revisión para cada tipo de error
+    error_review_messages = {
+        "E001": "Agregue la columna faltante al fichero Excel.",
+        "E002": "Rellene el campo obligatorio que está vacío.",
+        "E003": "Corrija el valor para que coincida exactamente con el especificado.",
+        "E004": "Verifique y corrija el año en la columna repYear.",
+        "E005": "No puede ser \"unspecified\", \"desconocido\" ni \"unknown\".",
+        "E006": "Corrija el formato del número (verifique decimales, separadores y tipo de dato).",
+        "E007": "Corrija el recId siguiendo el patrón CCAA_AGENTE_###. Verifique: (1) CCAA en MAYÚSCULAS, (2) Agente zoon. válido, (3) Números secuenciales.",
+        "E008": "Elimine la fila duplicada o verifique que los datos sean correctamente únicos.",
     }
     
     document = Document()
@@ -135,10 +147,7 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str) -> None:
         row[2].text = "null" if pd.isna(error["value"]) else str(error["value"])
         row[3].text = str(error["error_code"])
         row[4].text = str(error["message"])
-        row[5].text = (
-            "Revise la columna y corrija el valor indicado."
-            if bool(error["is_cell_level"])
-            else "Revise la estructura general del fichero o las columnas esperadas."
-        )
+        error_code = str(error["error_code"])
+        row[5].text = error_review_messages.get(error_code, "Revise y corrija el error según lo indicado.")
 
     document.save(output_file)

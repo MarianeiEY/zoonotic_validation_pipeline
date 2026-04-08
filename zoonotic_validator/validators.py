@@ -316,7 +316,7 @@ def validate_recid_format(
                 field="recId",
                 value=value,
                 error_code="E007",
-                message=f"El recId '{value}' debe terminar en un número secuencial.",
+                message=f"El recId '{value}' debe terminar en números secuenciales (ej: 01, 02, etc.). Formato esperado: CCAA_AGENTE_### (ej: MU_Camp_01).",
                 sheet_name=sheet_name,
                 is_cell_level=True,
                 excel_column=header_map.get("recId"),
@@ -335,14 +335,13 @@ def validate_recid_format(
 
         # Si no encontró agente válido
         if agente is None:
-            valid_codes = ", ".join(sorted(valid_agent_codes))
             _append_error(
                 errors,
                 excel_row=excel_row,
                 field="recId",
                 value=value,
                 error_code="E007",
-                message=f"El recId '{value}' no contiene un código de agente válido. Códigos válidos: {valid_codes}",
+                message=f"El recId '{value}' contiene un código de agente zoonótico NO válido. Formato esperado: CCAAAgente### (ej: MURCamp01).",
                 sheet_name=sheet_name,
                 is_cell_level=True,
                 excel_column=header_map.get("recId"),
@@ -357,7 +356,7 @@ def validate_recid_format(
                 field="recId",
                 value=value,
                 error_code="E007",
-                message=f"El recId '{value}' debe especificar la CCAA.",
+                message=f"El recId '{value}' debe especificar el código de CCAA (2-4 caracteres en mayúsculas) antes del agente. Formato: CCAA_AGENTE_### (ej: MU_Camp_01).",
                 sheet_name=sheet_name,
                 is_cell_level=True,
                 excel_column=header_map.get("recId"),
@@ -372,7 +371,7 @@ def validate_recid_format(
                 field="recId",
                 value=value,
                 error_code="E007",
-                message=f"El recId '{value}' debe tener la CCAA en mayúsculas.",
+                message=f"El recId '{value}' tiene el código de CCAA en minúsculas. Debe estar en MAYÚSCULAS. Ejemplo correcto: {ccaa.upper()}_{agente}_###.",
                 sheet_name=sheet_name,
                 is_cell_level=True,
                 excel_column=header_map.get("recId"),

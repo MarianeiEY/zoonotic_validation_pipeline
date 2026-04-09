@@ -91,6 +91,7 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str, input_file: st
         "E008": "Fila completa duplicada",
         "E009": "Campo debe estar vacío pero contiene valor",
         "E010": "Contenido en idioma no-inglés detectado",
+        "E011": "Desacuerdo en la versión del Excel",
     }
     
     # Diccionario con mensajes específicos de revisión para cada tipo de error
@@ -105,6 +106,7 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str, input_file: st
         "E008": "Elimine la fila duplicada o verifique que los datos sean correctamente únicos.",
         "E009": "Este campo debe permanecer vacío. Elimine el contenido de la celda.",
         "E010": "Corrija el contenido para que esté completamente en inglés.",
+        "E011": "Verifique que la versión del Excel corresponde al año de envío de datos correcto.",
     }
     
     document = Document()

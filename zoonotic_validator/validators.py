@@ -456,6 +456,79 @@ def validate_empty_only_fields(
                 )
 
 
+def validate_english_content(
+    df: pd.DataFrame,
+    errors: List[ValidationError],
+    header_map: Dict[str, int],
+    sheet_name: str,
+) -> None:
+    """Validate that all text content is in English (no Spanish text)."""
+    import re
+    
+    # Lista de palabras españolas comunes (sin acentos) que claramente no son inglés
+    spanish_words_set = {
+        'datos', 'caso', 'resultado', 'nombre', 'muestra', 'prueba', 'control',
+        'positivo', 'negativo', 'presente', 'ausente', 'zona', 'area', 'ciudad',
+        'provincia', 'codigo', 'referencia', 'laboratorio', 'metodo', 'procedimiento',
+        'fecha', 'hora', 'dia', 'mes', 'ano', 'semana', 'observaciones', 'nota',
+        'comentario', 'cantidad', 'unidad', 'confirmacion', 'confirmado', 'confirmada',
+        'rechazado', 'rechazada', 'pendiente', 'completo', 'incompleto', 'cambios',
+        'cambio', 'verificacion', 'verificado', 'desconocido', 'indefinido', 'vacio',
+        'numero', 'letra', 'caracter', 'columna', 'fila', 'total', 'general',
+        'especial', 'principal', 'responsable', 'firmado', 'autorizado', 'aprobado',
+        'cancelado', 'finalizacion', 'revision', 'reteste', 'confirmatorio', 'analisis'
+    }
+    
+    for column in df.columns:
+        for row_index, row in df.iterrows():
+            excel_row = row_index + 2
+            value = row[column]
+            
+            if is_empty(value):
+                continue
+            
+            text = str(value).strip()
+            
+            # Si es muy corto (menos de 3 caracteres), permitir (código)
+            if len(text) < 3:
+                continue
+            
+            # Primero: Verificar caracteres acentuados/ñ
+            try:
+                text.encode('ascii')
+            except UnicodeEncodeError:
+                _append_error(
+                    errors,
+                    excel_row=excel_row,
+                    field=column,
+                    value=value,
+                    error_code="E010",
+                    message=f"El contenido del campo '{column}' contiene caracteres no-inglés.",
+                    sheet_name=sheet_name,
+                    is_cell_level=True,
+                    excel_column=header_map.get(column),
+                )
+                continue
+            
+            # Segundo: Buscar palabras españolas comunes
+            words = re.findall(r'\b[a-z]+\b', text.lower())
+            
+            for word in words:
+                if word in spanish_words_set:
+                    _append_error(
+                        errors,
+                        excel_row=excel_row,
+                        field=column,
+                        value=value,
+                        error_code="E010",
+                        message=f"El contenido del campo '{column}' contiene palabras en español.",
+                        sheet_name=sheet_name,
+                        is_cell_level=True,
+                        excel_column=header_map.get(column),
+                    )
+                    break  # Solo reportar una vez por celda
+
+
 def run_general_validations(
     df: pd.DataFrame,
     sheet_name: str,
@@ -481,5 +554,6 @@ def run_general_validations(
     validate_recid_format(working_df, errors, header_map, sheet_name)
     validate_duplicate_rows(working_df, errors, sheet_name)
     validate_empty_only_fields(working_df, errors, header_map, config, sheet_name)
+    validate_english_content(working_df, errors, header_map, sheet_name)
 
     return pd.DataFrame([error.to_dict() for error in errors])

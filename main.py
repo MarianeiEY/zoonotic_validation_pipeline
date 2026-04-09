@@ -49,6 +49,20 @@ else:
 input_file = os.path.join(script_dir, excel_files[selected_idx])
 print(f"✓ Archivo seleccionado: {excel_files[selected_idx]}\n")
 
+# Pedir al usuario que ingrese el año de la versión del Excel
+while True:
+    try:
+        year_input = input("📅 ¿Qué año de versión del Excel estamos validando? (ej: 2025): ").strip()
+        excel_version_year = int(year_input)
+        # Validar que sea un año razonable
+        if 2000 <= excel_version_year <= datetime.now().year + 1:
+            print(f"✓ Versión del Excel: {excel_version_year}\n")
+            break
+        else:
+            print(f"❌ Por favor, ingresa un año válido (entre 2000 y {datetime.now().year + 1})")
+    except ValueError:
+        print("❌ Por favor, ingresa un número válido para el año")
+
 sheet_to_validate = 1  # Puede ser el nombre de la hoja o su índice (0 para la primera hoja)
 
 # Extraer nombre del archivo sin extensión para incluirlo en los outputs

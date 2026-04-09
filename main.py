@@ -30,97 +30,121 @@ if not excel_files:
     print("❌ No se encontraron archivos Excel en la carpeta")
     exit(1)
 
-# Si hay solo un archivo, usarlo automáticamente
-if len(excel_files) == 1:
-    selected_idx = 0
-    print(f"✓ Usando único archivo: {excel_files[0]}\n")
-else:
-    # Pedir al usuario que seleccione
+# Bucle principal para validar múltiples archivos
+while True:
+    print("\n" + "="*60)
+    print("📁 Archivos Excel disponibles:")
+    for idx, file in enumerate(excel_files, 1):
+        print(f"  {idx}. {file}")
+    
+    # Si hay solo un archivo, usarlo automáticamente
+    if len(excel_files) == 1:
+        selected_idx = 0
+        print(f"✓ Usando único archivo: {excel_files[0]}\n")
+    else:
+        # Pedir al usuario que seleccione
+        while True:
+            try:
+                choice = input(f"\n🔹 Selecciona el número del archivo a validar (1-{len(excel_files)}): ").strip()
+                selected_idx = int(choice) - 1
+                if 0 <= selected_idx < len(excel_files):
+                    break
+                print(f"❌ Debes ingresar un número entre 1 y {len(excel_files)}")
+            except ValueError:
+                print("❌ Por favor, ingresa un número válido")
+
+    input_file = os.path.join(script_dir, excel_files[selected_idx])
+    print(f"✓ Archivo seleccionado: {excel_files[selected_idx]}\n")
+
+    # Extraer el año del Excel
+    detected_year = extract_year_from_mapping_options(input_file)
+    if detected_year:
+        print(f"📊 Año detectado en el Excel: {detected_year}")
+    else:
+        print(f"⚠️  No se pudo detectar el año en el Excel")
+
+    # Pedir al usuario que ingrese el año de la versión del Excel
+    year_mismatch = False
     while True:
         try:
-            choice = input(f"\n🔹 Selecciona el número del archivo a validar (1-{len(excel_files)}): ").strip()
-            selected_idx = int(choice) - 1
-            if 0 <= selected_idx < len(excel_files):
-                break
-            print(f"❌ Debes ingresar un número entre 1 y {len(excel_files)}")
-        except ValueError:
-            print("❌ Por favor, ingresa un número válido")
-
-input_file = os.path.join(script_dir, excel_files[selected_idx])
-print(f"✓ Archivo seleccionado: {excel_files[selected_idx]}\n")
-
-# Extraer el año del Excel
-detected_year = extract_year_from_mapping_options(input_file)
-if detected_year:
-    print(f"📊 Año detectado en el Excel: {detected_year}")
-else:
-    print(f"⚠️  No se pudo detectar el año en el Excel")
-
-# Pedir al usuario que ingrese el año de la versión del Excel
-while True:
-    try:
-        year_input = input("📅 ¿Qué año de versión del Excel estamos validando? (ej: 2025): ").strip()
-        excel_version_year = int(year_input)
-        # Validar que sea un año razonable
-        if 2000 <= excel_version_year <= datetime.now().year + 1:
-            # Validar que coincida con el año detectado
-            if detected_year and detected_year != excel_version_year:
-                print(f"⚠️  ADVERTENCIA: El año ingresado ({excel_version_year}) NO coincide con el año en el Excel ({detected_year})")
-                confirm = input("¿Deseas continuar de todas formas? (s/n): ").strip().lower()
-                if confirm == 's':
-                    print(f"✓ Continuando con versión del Excel: {excel_version_year}\n")
-                    break
+            year_input = input("📅 ¿Qué año de versión del Excel estamos validando? (ej: 2025): ").strip()
+            excel_version_year = int(year_input)
+            # Validar que sea un año razonable
+            if 2000 <= excel_version_year <= datetime.now().year + 1:
+                # Validar que coincida con el año detectado
+                if detected_year and detected_year != excel_version_year:
+                    print(f"⚠️  ADVERTENCIA: El Excel es de {detected_year}, pero ingresaste {excel_version_year}.")
+                    confirm = input("¿Estás seguro de que deseas continuar? (s/n): ").strip().lower()
+                    if confirm == 's':
+                        print(f"✓ Continuando con versión del Excel: {excel_version_year}")
+                        print(f"⚠️  Se registrará un error en el informe de validación.\n")
+                        year_mismatch = True
+                        break
+                    else:
+                        print("❌ Por favor, ingresa el año correcto\n")
                 else:
-                    print("❌ Por favor, ingresa el año correcto")
+                    print(f"✓ Versión del Excel: {excel_version_year}\n")
+                    break
             else:
-                print(f"✓ Versión del Excel: {excel_version_year}\n")
-                break
-        else:
-            print(f"❌ Por favor, ingresa un año válido (entre 2000 y {datetime.now().year + 1})")
-    except ValueError:
-        print("❌ Por favor, ingresa un número válido para el año")
+                print(f"❌ Por favor, ingresa un año válido (entre 2000 y {datetime.now().year + 1})")
+        except ValueError:
+            print("❌ Por favor, ingresa un número válido para el año")
 
-sheet_to_validate = 1  # Puede ser el nombre de la hoja o su índice (0 para la primera hoja)
+    sheet_to_validate = 1  # Puede ser el nombre de la hoja o su índice (0 para la primera hoja)
 
-# Extraer nombre del archivo sin extensión para incluirlo en los outputs
-file_name_without_ext = Path(excel_files[selected_idx]).stem
+    # Extraer nombre del archivo sin extensión para incluirlo en los outputs
+    file_name_without_ext = Path(excel_files[selected_idx]).stem
 
-timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-output_folder = os.path.join(script_dir, f"resultados_{timestamp}")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_folder = os.path.join(script_dir, f"resultados_{timestamp}_{file_name_without_ext}")
 
-errors_output_file = os.path.join(output_folder, f"errores_validaciones_generales_{file_name_without_ext}.xlsx")
-marked_excel_output_file = os.path.join(output_folder, f"mi_excel_zoonoticos_marcado_{file_name_without_ext}.xlsx")
-word_output_file = os.path.join(output_folder, f"informe_errores_validacion_{file_name_without_ext}.docx")
+    errors_output_file = os.path.join(output_folder, f"errores_validaciones_generales_{file_name_without_ext}.xlsx")
+    marked_excel_output_file = os.path.join(output_folder, f"mi_excel_zoonoticos_marcado_{file_name_without_ext}.xlsx")
+    word_output_file = os.path.join(output_folder, f"informe_errores_validacion_{file_name_without_ext}.docx")
 
-# Crear la carpeta antes del pipeline (las funciones de salida la necesitan)
-# Si hay error, se borrará automáticamente
-os.makedirs(output_folder, exist_ok=True)
+    # Crear la carpeta antes del pipeline (las funciones de salida la necesitan)
+    # Si hay error, se borrará automáticamente
+    os.makedirs(output_folder, exist_ok=True)
 
-try:
-    df_errors = run_validation_pipeline(
-        input_file=input_file,
-        sheet_name=sheet_to_validate,
-        errors_output_file=errors_output_file,
-        marked_excel_output_file=marked_excel_output_file,
-        word_output_file=word_output_file,
-        config=CONFIG,
-        excel_version_year=excel_version_year,
-    )
-except Exception:
-    # Si hay error, borra la carpeta de resultados
-    shutil.rmtree(output_folder, ignore_errors=True)
-    raise
+    try:
+        df_errors = run_validation_pipeline(
+            input_file=input_file,
+            sheet_name=sheet_to_validate,
+            errors_output_file=errors_output_file,
+            marked_excel_output_file=marked_excel_output_file,
+            word_output_file=word_output_file,
+            config=CONFIG,
+            excel_version_year=excel_version_year,
+            year_mismatch=year_mismatch,
+            detected_year=detected_year,
+        )
+    except Exception:
+        # Si hay error, borra la carpeta de resultados
+        shutil.rmtree(output_folder, ignore_errors=True)
+        raise
 
-# El resultado de esta función es un DataFrame con los errores detectados en las validaciones generales. Si no se han encontrado errores, este DataFrame estará vacío. Luego se imprime un mensaje indicando el resultado de la validación y los archivos generados.
+    # El resultado de esta función es un DataFrame con los errores detectados en las validaciones generales. Si no se han encontrado errores, este DataFrame estará vacío. Luego se imprime un mensaje indicando el resultado de la validación y los archivos generados.
 
-if df_errors.empty:
-    print("✅ No se han encontrado errores en las validaciones generales.")
-    print(f"📄 Word generado: {word_output_file}")
-    print(f"📗 Excel marcado generado: {marked_excel_output_file}")
-    print(f"📘 Excel de errores generado: {errors_output_file}")
-else:
-    print(f"⚠️ Se han encontrado {len(df_errors)} errores.")
-    print(df_errors)
-    print(f"📘 Excel de errores generado: {errors_output_file}")
-    print(f"📗 Excel marcado generado: {marked_excel_output_file}")
-    print(f"📄 Word generado: {word_output_file}")
+    if df_errors.empty:
+        print("✅ No se han encontrado errores en las validaciones generales.")
+        print(f"📄 Word generado: {word_output_file}")
+        print(f"📗 Excel marcado generado: {marked_excel_output_file}")
+        print(f"📘 Excel de errores generado: {errors_output_file}")
+    else:
+        print(f"⚠️ Se han encontrado {len(df_errors)} errores.")
+        print(df_errors)
+        print(f"📘 Excel de errores generado: {errors_output_file}")
+        print(f"📗 Excel marcado generado: {marked_excel_output_file}")
+        print(f"📄 Word generado: {word_output_file}")
+    
+    # Preguntar si desea validar otro archivo
+    print("\n" + "="*60)
+    while True:
+        otro = input("\n¿Deseas validar otro archivo? (s/n): ").strip().lower()
+        if otro in ['s', 'n']:
+            break
+        print("❌ Por favor, ingresa 's' o 'n'")
+    
+    if otro == 'n':
+        print("\n✅ ¡Hasta luego!")
+        break

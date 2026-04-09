@@ -85,6 +85,8 @@ def run_validation_pipeline(
     word_output_file: str, # El nombre del archivo Word donde se guardará el informe de resumen de los errores detectados.
     config: ValidationConfig, # La configuración de validación que se utilizará para ejecutar las validaciones generales. Esta configuración incluye las reglas de validación, los nombres de las columnas esperadas, y otros parámetros necesarios para aplicar las validaciones de manera consistente.
     excel_version_year: int = None, # El año de versión del Excel que se está validando (para referencia en el informe).
+    year_mismatch: bool = False, # Indica si hay desacuerdo entre el año del Excel y el año ingresado por el usuario.
+    detected_year: int = None, # El año detectado en el Excel.
 ):
     """Execute the complete validation pipeline end to end.
 
@@ -118,6 +120,9 @@ def run_validation_pipeline(
         dataframe,
         sheet_name=actual_sheet_name,
         config=config_with_year,
+        year_mismatch=year_mismatch,
+        detected_year=detected_year,
+        excel_version_year=excel_version_year,
     )
 # Después de ejecutar las validaciones generales, se generan los archivos de salida correspondientes: un Excel con los errores detectados, una copia del Excel original con las celdas que contienen errores resaltadas, y un informe en Word que resume los errores encontrados. El resultado de esta función es un DataFrame con los errores detectados en las validaciones generales, que se puede utilizar para revisar los resultados o para otros fines posteriores.
     save_errors_to_excel(errors_df, errors_output_file)

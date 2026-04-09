@@ -21,17 +21,12 @@ class ValidationConfig:
         "zoonosis_param",
         "matrix",
         "sampStage",
-        "sampOrig",
-        "sampType",
         "sampContext",
         "sampler",
         "progSampStrategy",
         "sampUnit",
-        "sampWeight",
-        "sampWeightUnit",
         "totUnitsTested",
-        "totUnitsPositive",
-        "anMethCode",
+        "totUnitsPositive"
     ])
     exact_rep_country: str = "ES | Spain"
     exact_lang: str = "EN | English"
@@ -41,8 +36,9 @@ class ValidationConfig:
     numeric_columns_integers_only: List[str] = field(default_factory=lambda: [
         "totUnitsTested",
         "totUnitsPositive",
+        "unitsPositive",
+        "unitsTested"
     ])
-    recid_pattern_hint: str = "CCAA_AGENTE_001" #Un patrón de ejemplo para el campo recId, consta de tres partes separadas por guiones bajos: una parte que representa la comunidad autónoma (CCAA), seguida de una parte que representa el agente zoonótico (AGENTE), y finalmente un número secuencial (001). Este patrón puede ser utilizado como referencia para validar el formato del campo recId en el Excel, asegurando que siga una estructura coherente y predecible. Se puede actualizar o ampliar este patrón según las necesidades específicas de validación.
 
-
+    recid_pattern_hint: str = "CCAAAGENTE001" #Un patrón de ejemplo para el campo recId, consta de tres partes separadas por guiones bajos: una parte que representa la comunidad autónoma (CCAA), seguida de una parte que representa el agente zoonótico (AGENTE), y finalmente un número secuencial (001). Este patrón puede ser utilizado como referencia para validar el formato del campo recId en el Excel, asegurando que siga una estructura coherente y predecible. Se puede actualizar o ampliar este patrón según las necesidades específicas de validación.
 CONFIG = ValidationConfig() # Creamos una instancia de la configuración que se puede importar y utilizar en todo el pipeline para acceder a las reglas de validación centralizadas.

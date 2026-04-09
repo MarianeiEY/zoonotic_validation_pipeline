@@ -84,6 +84,7 @@ def run_validation_pipeline(
     marked_excel_output_file: str, # El nombre del archivo Excel donde se guardará una copia del original con las celdas que contienen errores resaltadas.
     word_output_file: str, # El nombre del archivo Word donde se guardará el informe de resumen de los errores detectados.
     config: ValidationConfig, # La configuración de validación que se utilizará para ejecutar las validaciones generales. Esta configuración incluye las reglas de validación, los nombres de las columnas esperadas, y otros parámetros necesarios para aplicar las validaciones de manera consistente.
+    excel_version_year: int = None, # El año de versión del Excel que se está validando (para referencia en el informe).
 ):
     """Execute the complete validation pipeline end to end.
 
@@ -126,6 +127,6 @@ def run_validation_pipeline(
         errors_df=errors_df,
         output_file=marked_excel_output_file,
     )
-    create_word_report(errors_df, word_output_file, input_file=input_file)
+    create_word_report(errors_df, word_output_file, input_file=input_file, excel_version_year=excel_version_year)
 
     return errors_df

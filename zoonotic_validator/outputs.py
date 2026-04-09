@@ -77,7 +77,7 @@ def create_marked_excel(
 # Utiliza la biblioteca python-docx para crear el documento, agregar encabezados, párrafos y tablas. 
 # El informe se guarda con el nombre especificado en output_file. 
 # Este informe es útil para que los usuarios puedan revisar fácilmente los errores encontrados y entender qué aspectos necesitan ser corregidos en el Excel original.
-def create_word_report(errors_df: pd.DataFrame, output_file: str, input_file: str = None) -> None:
+def create_word_report(errors_df: pd.DataFrame, output_file: str, input_file: str = None, excel_version_year: int = None) -> None:
     """Generate a clear Word report with summary and detailed tables."""
     # Diccionario con descripciones de códigos de error
     error_descriptions = {
@@ -115,6 +115,12 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str, input_file: st
         file_name = Path(input_file).name
         p = document.add_paragraph(f"Archivo validado: {file_name}")
         # Aplicar formato en negrita al párrafo
+        for run in p.runs:
+            run.bold = True
+    
+    # Agregar versión del Excel si está disponible
+    if excel_version_year:
+        p = document.add_paragraph(f"Versión del Excel: {excel_version_year}")
         for run in p.runs:
             run.bold = True
 

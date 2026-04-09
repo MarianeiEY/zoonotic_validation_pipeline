@@ -8,7 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from zoonotic_validator.config import CONFIG
-from zoonotic_validator.pipeline import run_validation_pipeline
+from zoonotic_validator.pipeline import run_validation_pipeline, extract_year_from_mapping_options
 
 
 # ============================================================
@@ -49,6 +49,13 @@ else:
 input_file = os.path.join(script_dir, excel_files[selected_idx])
 print(f"✓ Archivo seleccionado: {excel_files[selected_idx]}\n")
 
+# Extraer el año del Excel
+detected_year = extract_year_from_mapping_options(input_file)
+if detected_year:
+    print(f"📊 Año detectado en el Excel: {detected_year}")
+else:
+    print(f"⚠️  No se pudo detectar el año en el Excel")
+
 # Pedir al usuario que ingrese el año de la versión del Excel
 while True:
     try:
@@ -56,8 +63,18 @@ while True:
         excel_version_year = int(year_input)
         # Validar que sea un año razonable
         if 2000 <= excel_version_year <= datetime.now().year + 1:
-            print(f"✓ Versión del Excel: {excel_version_year}\n")
-            break
+            # Validar que coincida con el año detectado
+            if detected_year and detected_year != excel_version_year:
+                print(f"⚠️  ADVERTENCIA: El año ingresado ({excel_version_year}) NO coincide con el año en el Excel ({detected_year})")
+                confirm = input("¿Deseas continuar de todas formas? (s/n): ").strip().lower()
+                if confirm == 's':
+                    print(f"✓ Continuando con versión del Excel: {excel_version_year}\n")
+                    break
+                else:
+                    print("❌ Por favor, ingresa el año correcto")
+            else:
+                print(f"✓ Versión del Excel: {excel_version_year}\n")
+                break
         else:
             print(f"❌ Por favor, ingresa un año válido (entre 2000 y {datetime.now().year + 1})")
     except ValueError:
@@ -87,6 +104,7 @@ try:
         marked_excel_output_file=marked_excel_output_file,
         word_output_file=word_output_file,
         config=CONFIG,
+        excel_version_year=excel_version_year,
     )
 except Exception:
     # Si hay error, borra la carpeta de resultados

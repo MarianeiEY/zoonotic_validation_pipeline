@@ -39,6 +39,9 @@ class ValidationConfig:
         "unitsPositive",
         "unitsTested"
     ])
+    empty_only_fields: List[str] = field(default_factory=lambda: [
+        "sampArea"
+    ]) # Lista de campos que DEBEN estar vacíos. Si contienen algún valor, se reporta un error.
 
     recid_pattern_hint: str = "CCAAAGENTE001" #Un patrón de ejemplo para el campo recId, consta de tres partes separadas por guiones bajos: una parte que representa la comunidad autónoma (CCAA), seguida de una parte que representa el agente zoonótico (AGENTE), y finalmente un número secuencial (001). Este patrón puede ser utilizado como referencia para validar el formato del campo recId en el Excel, asegurando que siga una estructura coherente y predecible. Se puede actualizar o ampliar este patrón según las necesidades específicas de validación.
 CONFIG = ValidationConfig() # Creamos una instancia de la configuración que se puede importar y utilizar en todo el pipeline para acceder a las reglas de validación centralizadas.

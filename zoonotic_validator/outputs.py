@@ -89,6 +89,7 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str, input_file: st
         "E006": "Formato numérico inválido",
         "E007": "Formato recId inválido: CCAA en MAYÚSCULAS, agente válido, números según fila",
         "E008": "Fila completa duplicada",
+        "E009": "Campo debe estar vacío pero contiene valor",
     }
     
     # Diccionario con mensajes específicos de revisión para cada tipo de error
@@ -101,6 +102,7 @@ def create_word_report(errors_df: pd.DataFrame, output_file: str, input_file: st
         "E006": "Corrija el formato del número (verifique decimales, separadores y tipo de dato).",
         "E007": "Corrija el recId siguiendo el patrón CCAA_AGENTE_###. Verifique: (1) CCAA en MAYÚSCULAS, (2) Agente zoon. válido, (3) Números según fila del Excel.",
         "E008": "Elimine la fila duplicada o verifique que los datos sean correctamente únicos.",
+        "E009": "Este campo debe permanecer vacío. Elimine el contenido de la celda.",
     }
     
     document = Document()

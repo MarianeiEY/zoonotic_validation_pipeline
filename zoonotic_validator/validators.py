@@ -427,6 +427,33 @@ def validate_duplicate_rows(
             )
 
 
+def validate_empty_only_fields(
+    df: pd.DataFrame,
+    errors: List[ValidationError],
+    header_map: Dict[str, int],
+    config: ValidationConfig,
+    sheet_name: str,
+) -> None:
+    """Validate that fields that must be empty are indeed empty."""
+    for column in config.empty_only_fields:
+        if column not in df.columns:
+            continue
+
+        for row_index, row in df.iterrows():
+            excel_row = row_index + 2
+            value = row[column]
+            if not is_empty(value):
+                _append_error(
+                    errors,
+                    excel_row=excel_row,
+                    field=column,
+                    value=value,
+                    error_code="E009",
+                    message=f"El campo '{column}' debe estar vacío pero contiene: '{value}'.",
+                    sheet_name=sheet_name,
+                    is_cell_level=True,
+                    excel_column=header_map.get(column),
+                )
 
 
 def run_general_validations(
@@ -453,5 +480,6 @@ def run_general_validations(
     validate_numeric_columns(working_df, errors, header_map, config, sheet_name)
     validate_recid_format(working_df, errors, header_map, sheet_name)
     validate_duplicate_rows(working_df, errors, sheet_name)
+    validate_empty_only_fields(working_df, errors, header_map, config, sheet_name)
 
     return pd.DataFrame([error.to_dict() for error in errors])
